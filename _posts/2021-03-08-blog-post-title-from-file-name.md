@@ -1,36 +1,25 @@
-## Blog Post Title From First Header
+## HTB Object - Writeup
 
-Due to a plugin called `jekyll-titles-from-headings` which is supported by GitHub Pages by default. The above header (in the markdown file) will be automatically used as the pages title.
-
-If the file does not start with a header, then the post title will be derived from the filename.
-
-This is a sample blog post. You can talk about all sorts of fun things here.
+This Active Directory box was especially challenging due to a firewall that blocked many connections, adding an extra layer of difficulty.  
+The journey began with decrypting a password from Jenkins, which granted WinRM access as a user.  
+From there, abusing ACLs became crucial for escalating privileges.  
+Each step deepened my understanding of AD exploitation, making it a rewarding and insightful challenge.  
 
 ---
 
-### This is a header
+### Nmap 
 
-#### Some T-SQL Code
+#### The nmap scan revealed three open ports:
 
-```tsql
-SELECT This, [Is], A, Code, Block -- Using SSMS style syntax highlighting
-    , REVERSE('abc')
-FROM dbo.SomeTable s
-    CROSS JOIN dbo.OtherTable o;
-```
+![obraz](https://github.com/user-attachments/assets/efd1d3c9-feb6-4852-9cbe-d5584e14695f)
 
-#### Some PowerShell Code
 
-```powershell
-Write-Host "This is a powershell Code block";
+#### Port 80 - Website 
 
-# There are many other languages you can use, but the style has to be loaded first
+Here’s what the website looks like:
 
-ForEach ($thing in $things) {
-    Write-Output "It highlights it using the GitHub style"
-}
-```
+![obraz](https://github.com/user-attachments/assets/282f048d-8c09-46d6-a32a-b91705981b8f)
 
-```
-some code
-```
+
+
+
