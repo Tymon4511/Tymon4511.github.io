@@ -1,5 +1,6 @@
 
 Welcome to my blog!
+
 I'm an aspiring cybersecurity practitioner. I hold OSCP certification, as well as CCNA, CompTIA Security+ (SY0-701), and SBT Blue Team Level 1.
 
 After graduating from a technical high school specializing in IT, I’ve been focused on developing both my networking and security skills through hands-on experience.
