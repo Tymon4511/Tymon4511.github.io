@@ -194,6 +194,138 @@ Now we can put everything together and get plain text password with this script:
 https://github.com/gquere/pwn_jenkins/blob/master/offline_decryption/jenkins_offline_decrypt.py
 ```
 
+![obraz](https://github.com/user-attachments/assets/aa5be5f5-2be8-409d-b5e8-ae0ef4e4449e)  
+
+From nmap scan we know that port 5985 is open, meaning that we can try connect with evil-winrm:  
+
+![obraz](https://github.com/user-attachments/assets/51ac9437-f71d-4a77-876e-72272f9c03ff)  
+
+Let's retrieve a flag:  
+
+![obraz](https://github.com/user-attachments/assets/06b50265-e37a-4be9-b2f9-e4f0f237b5d6)
+
+
+I like to check privileges first when enumerating windows:  
+
+![obraz](https://github.com/user-attachments/assets/3434ce35-7525-4ea9-8844-2faae78d7745)
+
+
+At this point I'll run bloodhound.  
+Normally I would run bloodhound-python to collect information for bloodhound but there is a firewall that blocks connection.  
+We can use evil-winrm's upload function to upload Sharphound, and run it with collection method "all":
+
+![obraz](https://github.com/user-attachments/assets/b2a5220f-8078-40cd-8817-9bace22481dc)
+
+
+Now we can move .zip file with evil-winrm's download function, run bloodhound and ingest data.  
+
+
+## Bloodhound Analysis  
+
+First we can mark oliver as "owned".  
+If we look at node info and scroll a bit down we notice that oliver has one Object control.
+
+
+
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f54f92f7-dade-40b7-9933-388f5a3ad325" alt="obraz">
+</p>
+
+If we check that we can see that we have "ForceChangePassword" over user smith.  
+Meaning we can change smith's password, normally I would do it remotely from kali linux, but once again this machine blocks connections with firewall.  
+
+![obraz](https://github.com/user-attachments/assets/d66306c4-8b48-4e3a-8847-040e72404f0f)
+
+Let's change his password locally on the target machine, in order to do that we will use PowerView.ps1 script.
+We can upload it with evil-winrm's upload function and load it into memory.  
+
+![obraz](https://github.com/user-attachments/assets/80c09be8-be7d-4851-b26f-e9e7896bf116)
+
+Now to change his password we need to create password object in powershell which will contain new password for user smith.  
+Then use this object to change the password.  
+
+![obraz](https://github.com/user-attachments/assets/9778af70-f5f6-485c-91e7-6f8073625011)  
+
+
+## Shell as Smith
+
+Now we can login with evil-winrm.  
+
+![obraz](https://github.com/user-attachments/assets/3a8155fa-c4c0-4992-b959-f507a24cf213)
+
+
+
+## Pivoting to Maria
+
+Back to bloodhound we can mark smith as owned.  
+Lucky for us smith has object control over another user too. 
+
+![obraz](https://github.com/user-attachments/assets/da8ba73e-7e26-406a-a31e-2462447123f2)
+
+Bloodhound help says that we can perform targeted Kerberoast attack with "GenericWrite" privilege.  
+To achieve it we need to create SPN for the target user, and then retrieve it's hash.  
+
+![obraz](https://github.com/user-attachments/assets/e30c420a-3d49-4677-b53d-08a4d81beaad)
+
+Unfortunately it didnt't work.  
+
+![obraz](https://github.com/user-attachments/assets/a75f8780-e281-4f6f-9dab-3dabe3fd1307)
+
+It's time for different approach, let's open google and do more research.  
+After researching this topic I found that we can change logonscript for a user with "GenericWrite" privilege.  
+
+```
+https://notes.morph3.blog/abusing-active-directory-acls/genericwrite
+```
+This article explains it.  
+Logon script runs everytime a user logs in.  
+It's automated by HTB but normally we would wait for a user to log in.   
+
+Due to firewall we can't connect back to our machine, let's stick with enumeration.  
+
+![obraz](https://github.com/user-attachments/assets/2b31fb66-30fc-4a67-9ef7-58c063cce9c1)  
+
+On this screenshot we can see that user Maria has Engines.xls file on the desktop.  
+We can copy this file to programdata directory with the same method.  
+
+![obraz](https://github.com/user-attachments/assets/30371752-072b-49d4-98a5-6fda16254755)
+
+Let's check this file:  
+
+![obraz](https://github.com/user-attachments/assets/9198e3dc-0366-49a6-a0b2-d95c53bd9172)  
+
+It contain some passwords, now I'll put those passwords in a file and spray them with nxc:  
+
+![obraz](https://github.com/user-attachments/assets/13a1e350-81d0-499b-92c4-8324004ad961)  
+
+
+
+## Elevating Privileges as Maria
+
+Now we can check bloodhound once again.  
+We have WriteOwner over "Domain Admins" group, meaning we can easily elevate privileges.  
+
+First we will take ownership of this group:
+```
+Set-DomainObjectOwner -Identity 'Domain Admins' -OwnerIdentity 'maria'
+```
+Then grant Maria full rights:
+```
+Add-DomainObjectAcl -Rights 'All' -TargetIdentity "Domain Admins" -PrincipalIdentity "maria"
+```
+Lastly add Maria to the group:
+```
+Add-ADGroupMember -Identity 'Domain Admins' -Members 'maria'
+```
+
+![obraz](https://github.com/user-attachments/assets/1d5a12aa-1de5-4929-9180-eb4f671b05b7)  
+
+For it to take changes we have to exit evil-winrm and connect again.  
+Lastly we will retrieve the root flag.  
+
+![obraz](https://github.com/user-attachments/assets/cbd67214-a04f-4e14-9504-803c9a450b0d)
+
 
 
 
